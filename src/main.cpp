@@ -6,6 +6,8 @@
 #include <UNIT_ENV.h>
 #include "Secret.h"
 
+#define WAIT_MSEC 60000
+
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASSWORD;
 const char* mqtt_server = MQTT_BROKER_URL;
@@ -60,10 +62,10 @@ void reconnect() {
     // Attempt to connect
     if (client.connect(clientId.c_str())) {
       Serial.println("connected");
-      // Once connected, publish an announcement...
-      client.publish("outTopic", "hello world");
-      // ... and resubscribe
-      client.subscribe("inTopic");
+      /* // Once connected, publish an announcement... */
+      /* client.publish("outTopic", "hello world"); */
+      /* // ... and resubscribe */
+      /* client.subscribe("inTopic"); */
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -142,19 +144,24 @@ void setup() {
 }
 
 void loop() {
-    if (!client.connected()) {
-        reconnect();
-    }
     #ifdef CO2
-    if (millis() - lastPublishCo2 > 2500) {
+    if (millis() - lastPublishCo2 > WAIT_MSEC) {
+        if (!client.connected()) {
+            reconnect();
+        }
         publishCo2();
         lastPublishCo2 = millis();
+        client.disconnect();
     }
     #endif
     #ifdef AIR_PRESSURE
-    if (millis() - lastAirPressure > 1000) {
+    if (millis() - lastAirPressure > WAIT_MSEC) {
+        if (!client.connected()) {
+            reconnect();
+        }
         publishAirPressure();
         lastAirPressure = millis();
+        client.disconnect();
     }
     #endif
 }
